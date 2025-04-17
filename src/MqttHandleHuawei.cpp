@@ -79,7 +79,7 @@ void MqttHandleHuaweiClass::loop()
         return;
     }
 
-    auto const& dataPoints = HuaweiCan.getDataPoints();
+    auto const& dataPoints = GridCharger.getDataPoints();
 
 #define PUB(l, t) \
     { \
@@ -145,7 +145,7 @@ void MqttHandleHuaweiClass::loop()
     }
 
     MqttSettings.publish("huawei/data_age", String((millis() - dataPoints.getLastUpdate()) / 1000));
-    MqttSettings.publish("huawei/mode", String(HuaweiCan.getMode()));
+    MqttSettings.publish("huawei/mode", String(GridCharger.getMode()));
 
     _lastPublish = millis();
 }
@@ -178,7 +178,7 @@ void MqttHandleHuaweiClass::onMqttMessage(Topic enumTopic,
             return false;
         }
         DTU_LOGI("Limit %s: %.2f %s", paramName, payload_val, unit);
-        _mqttCallbacks.push_back(std::bind(&Controller::setParameter, &HuaweiCan, payload_val, setting));
+        _mqttCallbacks.push_back(std::bind(&Controller::setParameter, &GridCharger, payload_val, setting));
         return true;
     };
 
@@ -207,22 +207,22 @@ void MqttHandleHuaweiClass::onMqttMessage(Topic enumTopic,
             switch (static_cast<int>(payload_val)) {
                 case 3:
                     DTU_LOGI("Received MQTT msg. New mode: Full internal control");
-                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &HuaweiCan, HUAWEI_MODE_AUTO_INT));
+                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &GridCharger, HUAWEI_MODE_AUTO_INT));
                     break;
 
                 case 2:
                     DTU_LOGI("Received MQTT msg. New mode: Internal on/off control, external power limit");
-                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &HuaweiCan, HUAWEI_MODE_AUTO_EXT));
+                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &GridCharger, HUAWEI_MODE_AUTO_EXT));
                     break;
 
                 case 1:
                     DTU_LOGI("Received MQTT msg. New mode: Turned ON");
-                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &HuaweiCan, HUAWEI_MODE_ON));
+                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &GridCharger, HUAWEI_MODE_ON));
                     break;
 
                 case 0:
                     DTU_LOGI("Received MQTT msg. New mode: Turned OFF");
-                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &HuaweiCan, HUAWEI_MODE_OFF));
+                    _mqttCallbacks.push_back(std::bind(&Controller::setMode, &GridCharger, HUAWEI_MODE_OFF));
                     break;
 
                 default:
@@ -235,7 +235,7 @@ void MqttHandleHuaweiClass::onMqttMessage(Topic enumTopic,
         {
             bool enable = payload_val > 0;
             DTU_LOGI("Production to be %sabled", (enable?"en":"dis"));
-            _mqttCallbacks.push_back(std::bind(&Controller::setProduction, &HuaweiCan, enable));
+            _mqttCallbacks.push_back(std::bind(&Controller::setProduction, &GridCharger, enable));
             break;
         }
 
@@ -250,7 +250,7 @@ void MqttHandleHuaweiClass::onMqttMessage(Topic enumTopic,
             bool online = (Topic::FanOnlineFullSpeed == enumTopic);
             bool fullSpeed = payload_val > 0;
             DTU_LOGI("%sline fan %s speed", (online?"On":"Off"), (fullSpeed?"full":"auto"));
-            _mqttCallbacks.push_back(std::bind(&Controller::setFan, &HuaweiCan, online, fullSpeed));
+            _mqttCallbacks.push_back(std::bind(&Controller::setFan, &GridCharger, online, fullSpeed));
             break;
         }
     }

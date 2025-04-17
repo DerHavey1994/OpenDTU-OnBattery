@@ -17,7 +17,7 @@ static const char* SUBTAG = "Controller";
 #include <functional>
 #include <algorithm>
 
-GridChargers::Huawei::Controller HuaweiCan;
+GridChargers::Huawei::Controller GridCharger;
 
 namespace GridChargers::Huawei {
 

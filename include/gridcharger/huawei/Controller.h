@@ -112,4 +112,4 @@ private:
 
 } // namespace GridChargers::Huawei
 
-extern GridChargers::Huawei::Controller HuaweiCan;
+extern GridChargers::Huawei::Controller GridCharger;

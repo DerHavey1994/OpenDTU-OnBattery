@@ -115,12 +115,12 @@ void WebApiWsLiveClass::generateOnBatteryJsonResponse(JsonVariant& root, bool al
         if (!all) { _lastPublishSolarCharger = millis(); }
     }
 
-    if (all || (HuaweiCan.getDataPoints().getLastUpdate() - _lastPublishGridCharger) < halfOfAllMillis ) {
+    if (all || (GridCharger.getDataPoints().getLastUpdate() - _lastPublishGridCharger) < halfOfAllMillis ) {
         auto gridChargerObj = root["gridcharger"].to<JsonObject>();
         gridChargerObj["enabled"] = config.GridCharger.Enabled;
 
         if (config.GridCharger.Enabled) {
-            auto const& dataPoints = HuaweiCan.getDataPoints();
+            auto const& dataPoints = GridCharger.getDataPoints();
             auto oInputPower = dataPoints.get<GridChargers::Huawei::DataPointLabel::InputPower>();
             float pwr = oInputPower.value_or(0.0f);
             addTotalField(gridChargerObj, "Power", pwr, "W", 2);

@@ -32,7 +32,7 @@ void WebApiGridChargerClass::onStatus(AsyncWebServerRequest* request)
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
     auto& root = response->getRoot();
-    HuaweiCan.getJsonData(root);
+    GridCharger.getJsonData(root);
 
     response->setLength();
     request->send(response);
@@ -68,7 +68,7 @@ void WebApiGridChargerClass::onLimitPost(AsyncWebServerRequest* request)
             return false;
         }
 
-        HuaweiCan.setParameter(value, setting);
+        GridCharger.setParameter(value, setting);
         return true;
     };
 
@@ -119,7 +119,7 @@ void WebApiGridChargerClass::onPowerPost(AsyncWebServerRequest* request)
     }
 
     bool power = root["power"].as<bool>();
-    HuaweiCan.setProduction(power);
+    GridCharger.setProduction(power);
 
     retMsg["type"] = "success";
     retMsg["message"] = "Power production " + String(power ? "en" : "dis") + "abled!";
@@ -216,5 +216,5 @@ void WebApiGridChargerClass::onAdminPost(AsyncWebServerRequest* request)
 
     WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 
-    HuaweiCan.updateSettings();
+    GridCharger.updateSettings();
 }

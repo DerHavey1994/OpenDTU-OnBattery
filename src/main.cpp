@@ -151,7 +151,7 @@ void setup()
     SolarCharger.init(scheduler);
     PowerMeter.init(scheduler);
     PowerLimiter.init(scheduler);
-    HuaweiCan.init(scheduler);
+    GridCharger.init(scheduler);
     Battery.init(scheduler);
 
     ESP_LOGI(TAG, "Startup complete");
