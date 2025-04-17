@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 Thomas Basler and others
  */
-#include "MqttHandleHuawei.h"
+#include <gridcharger/huawei/MqttHandleHuawei.h>
 #include "MqttSettings.h"
 #include <gridcharger/Controller.h>
 #include <gridcharger/huawei/Provider.h>

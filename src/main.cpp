@@ -13,11 +13,11 @@
 #include "SerialPortManager.h"
 #include <battery/Controller.h>
 #include <gridcharger/Controller.h>
+#include <gridcharger/huawei/MqttHandleHuawei.h>
 #include "MqttHandleDtu.h"
 #include "MqttHandleHass.h"
 #include "MqttHandleInverter.h"
 #include "MqttHandleInverterTotal.h"
-#include "MqttHandleHuawei.h"
 #include "MqttHandlePowerLimiter.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "MqttSettings.h"

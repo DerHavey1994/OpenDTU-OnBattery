@@ -8,7 +8,7 @@
 #include "MqttHandleHass.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "MqttHandleInverter.h"
-#include "MqttHandleHuawei.h"
+#include <gridcharger/huawei/MqttHandleHuawei.h>
 #include "MqttHandlePowerLimiter.h"
 #include "MqttSettings.h"
 #include "WebApi.h"
