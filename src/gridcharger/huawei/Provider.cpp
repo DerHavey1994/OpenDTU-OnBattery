@@ -3,7 +3,7 @@
  * Copyright (C) 2023 Malte Schmidt and others
  */
 #include <battery/Controller.h>
-#include <gridcharger/huawei/Controller.h>
+#include <gridcharger/huawei/Provider.h>
 #include <gridcharger/huawei/MCP2515.h>
 #include <gridcharger/huawei/TWAI.h>
 #include <powermeter/Controller.h>
@@ -17,7 +17,7 @@ static const char* SUBTAG = "Controller";
 #include <functional>
 #include <algorithm>
 
-GridChargers::Huawei::Controller GridCharger;
+GridChargers::Huawei::Provider GridCharger;
 
 namespace GridChargers::Huawei {
 
@@ -26,19 +26,19 @@ namespace GridChargers::Huawei {
 #define HUAWEI_AUTO_MODE_SHUTDOWN_DELAY 60000
 #define HUAWEI_AUTO_MODE_SHUTDOWN_CURRENT 0.75
 
-void Controller::init(Scheduler& scheduler)
+void Provider::init(Scheduler& scheduler)
 {
     DTU_LOGI("Initialize Huawei AC charger interface...");
 
     scheduler.addTask(_loopTask);
-    _loopTask.setCallback(std::bind(&Controller::loop, this));
+    _loopTask.setCallback(std::bind(&Provider::loop, this));
     _loopTask.setIterations(TASK_FOREVER);
     _loopTask.enable();
 
     updateSettings();
 }
 
-void Controller::enableOutput()
+void Provider::enableOutput()
 {
     if (_oOutputEnabled.value_or(false)) { return; }
 
@@ -49,7 +49,7 @@ void Controller::enableOutput()
     digitalWrite(_huaweiPower, 0);
 }
 
-void Controller::disableOutput()
+void Provider::disableOutput()
 {
     if (!_oOutputEnabled.value_or(true)) { return; }
 
@@ -60,7 +60,7 @@ void Controller::disableOutput()
     digitalWrite(_huaweiPower, 1);
 }
 
-void Controller::updateSettings()
+void Provider::updateSettings()
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -104,7 +104,7 @@ void Controller::updateSettings()
     DTU_LOGI("Hardware Interface initialized successfully");
 }
 
-void Controller::loop()
+void Provider::loop()
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -279,7 +279,7 @@ void Controller::loop()
     }
 }
 
-void Controller::setFan(bool online, bool fullSpeed)
+void Provider::setFan(bool online, bool fullSpeed)
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -290,13 +290,13 @@ void Controller::setFan(bool online, bool fullSpeed)
     _upHardwareInterface->setParameter(setting, fullSpeed ? 1 : 0);
 }
 
-void Controller::_setProduction(bool enable)
+void Provider::_setProduction(bool enable)
 {
     auto setting = HardwareInterface::Setting::ProductionDisable;
     _upHardwareInterface->setParameter(setting, enable ? 0 : 1);
 }
 
-void Controller::setProduction(bool enable)
+void Provider::setProduction(bool enable)
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -304,7 +304,7 @@ void Controller::setProduction(bool enable)
     _setProduction(enable);
 }
 
-void Controller::setParameter(float val, HardwareInterface::Setting setting)
+void Provider::setParameter(float val, HardwareInterface::Setting setting)
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -318,7 +318,7 @@ void Controller::setParameter(float val, HardwareInterface::Setting setting)
     _setParameter(val, setting, true/*pollFeedback*/);
 }
 
-void Controller::_setParameter(float val, HardwareInterface::Setting setting, bool pollFeedback)
+void Provider::_setParameter(float val, HardwareInterface::Setting setting, bool pollFeedback)
 {
     // NOTE: the mutex is locked by any method calling this private method
 
@@ -342,7 +342,7 @@ void Controller::_setParameter(float val, HardwareInterface::Setting setting, bo
     _upHardwareInterface->setParameter(setting, val, pollFeedback);
 }
 
-void Controller::setMode(uint8_t mode) {
+void Provider::setMode(uint8_t mode) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     if (!_upHardwareInterface) { return; }
@@ -374,7 +374,7 @@ void Controller::setMode(uint8_t mode) {
     }
 }
 
-void Controller::getJsonData(JsonVariant& root) const
+void Provider::getJsonData(JsonVariant& root) const
 {
     root["dataAge"] = millis() - _dataPoints.getLastUpdate();
     root["showSettings"] = true;

@@ -8,7 +8,7 @@
 #include "WebApi.h"
 #include <battery/Controller.h>
 #include <battery/Stats.h>
-#include <gridcharger/huawei/Controller.h>
+#include <gridcharger/huawei/Provider.h>
 #include <powermeter/Controller.h>
 #include "defaults.h"
 #include <solarcharger/Controller.h>

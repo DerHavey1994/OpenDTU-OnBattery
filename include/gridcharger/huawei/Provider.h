@@ -17,7 +17,7 @@ namespace GridChargers::Huawei {
 #define HUAWEI_MODE_AUTO_EXT 2
 #define HUAWEI_MODE_AUTO_INT 3
 
-class Controller {
+class Provider {
 public:
     void init(Scheduler& scheduler);
     void updateSettings();
@@ -112,4 +112,4 @@ private:
 
 } // namespace GridChargers::Huawei
 
-extern GridChargers::Huawei::Controller GridCharger;
+extern GridChargers::Huawei::Provider GridCharger;

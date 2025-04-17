@@ -12,7 +12,7 @@
 #include "MessageOutput.h"
 #include "SerialPortManager.h"
 #include <battery/Controller.h>
-#include <gridcharger/huawei/Controller.h>
+#include <gridcharger/huawei/Provider.h>
 #include "MqttHandleDtu.h"
 #include "MqttHandleHass.h"
 #include "MqttHandleInverter.h"

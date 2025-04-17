@@ -5,7 +5,7 @@
 #include "WebApi_ws_gridcharger.h"
 #include "AsyncJson.h"
 #include "Configuration.h"
-#include <gridcharger/huawei/Controller.h>
+#include <gridcharger/huawei/Provider.h>
 #include "Utils.h"
 #include "WebApi.h"
 #include "defaults.h"
