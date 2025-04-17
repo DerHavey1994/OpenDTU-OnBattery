@@ -6,6 +6,7 @@
 #include <optional>
 #include <ArduinoJson.h>
 #include <TaskSchedulerDeclarations.h>
+#include <gridcharger/Provider.h>
 #include <gridcharger/huawei/HardwareInterface.h>
 #include <gridcharger/huawei/DataPoints.h>
 
@@ -17,10 +18,11 @@ namespace GridChargers::Huawei {
 #define HUAWEI_MODE_AUTO_EXT 2
 #define HUAWEI_MODE_AUTO_INT 3
 
-class Provider {
+class Provider : public ::GridChargers::Provider {
 public:
-    void init(Scheduler& scheduler);
-    void updateSettings();
+    bool init() final;
+    void deinit() final;
+    void loop() final;
     void setFan(bool online, bool fullSpeed);
     void setProduction(bool enable);
     void setParameter(float val, HardwareInterface::Setting setting);
@@ -46,7 +48,6 @@ public:
     static constexpr float MAX_INPUT_CURRENT_LIMIT = 40.0f;
 
 private:
-    void loop();
     void _setParameter(float val, HardwareInterface::Setting setting, bool pollFeedback = false);
     void _setProduction(bool enable);
 
@@ -110,6 +111,5 @@ private:
     bool _batteryEmergencyCharging = false;
 };
 
-} // namespace GridChargers::Huawei
 
-extern GridChargers::Huawei::Provider GridCharger;
+} // namespace GridChargers::Huawei

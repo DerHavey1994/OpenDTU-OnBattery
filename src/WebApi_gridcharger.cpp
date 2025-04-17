@@ -3,6 +3,7 @@
  * Copyright (C) 2022-2024 Thomas Basler and others
  */
 #include "WebApi_gridcharger.h"
+#include <gridcharger/Controller.h>
 #include <gridcharger/huawei/Provider.h>
 #include "Configuration.h"
 #include "PinMapping.h"

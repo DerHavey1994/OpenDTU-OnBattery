@@ -12,12 +12,10 @@
 #include <LogHelper.h>
 
 static const char* TAG = "gridCharger";
-static const char* SUBTAG = "Controller";
+static const char* SUBTAG = "Huawei";
 
 #include <functional>
 #include <algorithm>
-
-GridChargers::Huawei::Provider GridCharger;
 
 namespace GridChargers::Huawei {
 
@@ -26,16 +24,54 @@ namespace GridChargers::Huawei {
 #define HUAWEI_AUTO_MODE_SHUTDOWN_DELAY 60000
 #define HUAWEI_AUTO_MODE_SHUTDOWN_CURRENT 0.75
 
-void Provider::init(Scheduler& scheduler)
+bool Provider::init()
 {
     DTU_LOGI("Initialize Huawei AC charger interface...");
 
-    scheduler.addTask(_loopTask);
-    _loopTask.setCallback(std::bind(&Provider::loop, this));
-    _loopTask.setIterations(TASK_FOREVER);
-    _loopTask.enable();
+    _upHardwareInterface.reset(nullptr);
 
-    updateSettings();
+    auto const& config = Configuration.get();
+
+    switch (config.GridCharger.Can.HardwareInterface) {
+        case GridChargerHardwareInterface::MCP2515:
+            _upHardwareInterface = std::make_unique<MCP2515>();
+            break;
+        case GridChargerHardwareInterface::TWAI:
+            _upHardwareInterface = std::make_unique<TWAI>();
+            break;
+        default:
+            DTU_LOGE("Unknown hardware interface setting %d", config.GridCharger.Can.HardwareInterface);
+            return false;
+            break;
+    }
+
+    if (!_upHardwareInterface->init()) {
+        DTU_LOGE("Error initializing hardware interface");
+        _upHardwareInterface.reset(nullptr);
+        return false;
+    };
+
+    auto const& pin = PinMapping.get();
+    if (pin.huawei_power > GPIO_NUM_NC) {
+        _huaweiPower = pin.huawei_power;
+        pinMode(_huaweiPower, OUTPUT);
+        disableOutput();
+    }
+
+    _mode = HUAWEI_MODE_AUTO_EXT;
+    if (config.GridCharger.AutoPowerEnabled) {
+        _mode = HUAWEI_MODE_AUTO_INT;
+    }
+
+    DTU_LOGI("Hardware Interface initialized successfully");
+    return true;
+}
+
+void Provider::deinit()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    _upHardwareInterface.reset(nullptr);
 }
 
 void Provider::enableOutput()
@@ -58,50 +94,6 @@ void Provider::disableOutput()
 
     if (_huaweiPower <= GPIO_NUM_NC) { return; }
     digitalWrite(_huaweiPower, 1);
-}
-
-void Provider::updateSettings()
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    _upHardwareInterface.reset(nullptr);
-
-    auto const& config = Configuration.get();
-
-    if (!config.GridCharger.Enabled) { return; }
-
-    switch (config.GridCharger.Can.HardwareInterface) {
-        case GridChargerHardwareInterface::MCP2515:
-            _upHardwareInterface = std::make_unique<MCP2515>();
-            break;
-        case GridChargerHardwareInterface::TWAI:
-            _upHardwareInterface = std::make_unique<TWAI>();
-            break;
-        default:
-            DTU_LOGE("Unknown hardware interface setting %d", config.GridCharger.Can.HardwareInterface);
-            return;
-            break;
-    }
-
-    if (!_upHardwareInterface->init()) {
-        DTU_LOGE("Error initializing hardware interface");
-        _upHardwareInterface.reset(nullptr);
-        return;
-    };
-
-    auto const& pin = PinMapping.get();
-    if (pin.huawei_power > GPIO_NUM_NC) {
-        _huaweiPower = pin.huawei_power;
-        pinMode(_huaweiPower, OUTPUT);
-        disableOutput();
-    }
-
-    _mode = HUAWEI_MODE_AUTO_EXT;
-    if (config.GridCharger.AutoPowerEnabled) {
-        _mode = HUAWEI_MODE_AUTO_INT;
-    }
-
-    DTU_LOGI("Hardware Interface initialized successfully");
 }
 
 void Provider::loop()
