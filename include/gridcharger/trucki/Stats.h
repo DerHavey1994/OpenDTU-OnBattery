@@ -2,9 +2,9 @@
 #pragma once
 
 #include <gridcharger/Stats.h>
-#include <gridcharger/huawei/DataPoints.h>
+#include <gridcharger/trucki/DataPoints.h>
 
-namespace GridChargers::Huawei {
+namespace GridChargers::Trucki {
 
 class Stats : public ::GridChargers::Stats {
 friend class Provider;
@@ -17,8 +17,6 @@ public:
     void getLiveViewData(JsonVariant& root) const;
 
 protected:
-    void mqttPublish() const;
-
     void updateFrom(DataPointContainer const& dataPoints);
 
 private:
@@ -47,4 +45,4 @@ private:
     mutable DataPointContainer _dataPoints;
 };
 
-} // namespace GridChargers::Huawei
+} // namespace GridChargers::Trucki
