@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include <Configuration.h>
+
 #include <gridcharger/Controller.h>
+#include <gridcharger/DummyStats.h>
 #include <gridcharger/huawei/Provider.h>
+#include <Configuration.h>
 #include <MqttSettings.h>
 #include <LogHelper.h>
 
@@ -91,31 +93,6 @@ void Controller::setMode(uint8_t mode)
     _upProvider->setMode(mode);
 }
 
-uint32_t Controller::getLastUpdate() const
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (!_upProvider) { return 0; }
-
-    return _upProvider->getLastUpdate();
-}
-
-std::optional<float> Controller::getInputPower() const
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (!_upProvider) { return std::nullopt; }
-
-    return _upProvider->getInputPower();
-}
-
-Huawei::DataPointContainer const& Controller::getDataPoints() const
-{
-    if (!_upProvider) { return Huawei::DataPointContainer(); }
-
-    return _upProvider->getDataPoints();
-}
-
 uint8_t Controller::getMode() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -134,13 +111,16 @@ bool Controller::getAutoPowerStatus() const
     return _upProvider->getAutoPowerStatus();
 }
 
-void Controller::getJsonData(JsonVariant& root) const
+std::shared_ptr<Stats const> Controller::getStats() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    if (!_upProvider) { return; }
+    if (!_upProvider) {
+        static auto sspDummyStats = std::make_shared<DummyStats>();
+        return sspDummyStats;
+    }
 
-    _upProvider->getJsonData(root);
+    return _upProvider->getStats();
 }
 
 } // namespace GridChargers

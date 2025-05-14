@@ -9,6 +9,7 @@
 #include <gridcharger/Provider.h>
 #include <gridcharger/huawei/HardwareInterface.h>
 #include <gridcharger/huawei/DataPoints.h>
+#include <gridcharger/huawei/Stats.h>
 
 namespace GridChargers::Huawei {
 
@@ -23,13 +24,12 @@ public:
     bool init() final;
     void deinit() final;
     void loop() final;
+    std::shared_ptr<::GridChargers::Stats> getStats() const final { return _stats; }
+
     void setFan(bool online, bool fullSpeed);
     void setProduction(bool enable);
     void setParameter(float val, HardwareInterface::Setting setting);
     void setMode(uint8_t mode);
-
-    DataPointContainer const& getDataPoints() const { return _dataPoints; }
-    void getJsonData(JsonVariant& root) const;
 
     bool getAutoPowerStatus() const { return _autoPowerEnabled; };
     uint8_t getMode() const { return _mode; };
@@ -58,40 +58,6 @@ private:
     void disableOutput();
     gpio_num_t _huaweiPower;
 
-    template<DataPointLabel L>
-    void addValueInSection(JsonVariant& root,
-        std::string const& section, std::string const& name) const
-    {
-        auto oVal = _dataPoints.get<L>();
-        if (!oVal) { return; }
-
-        auto jsonValue = root["values"][section][name];
-        jsonValue["v"] = *oVal;
-        jsonValue["u"] = DataPointLabelTraits<L>::unit;
-        jsonValue["d"] = 2;
-    }
-
-    template<DataPointLabel L>
-    void addStringInSection(JsonVariant& root,
-        std::string const& section, std::string const& name) const
-    {
-        auto oVal = _dataPoints.get<L>();
-        if (!oVal) { return; }
-
-        auto jsonValue = root["values"][section][name];
-        jsonValue["value"] = *oVal;
-        jsonValue["translate"] = false;
-    }
-
-    void addStringInSection(JsonVariant& root,
-        std::string const& section, std::string const& name,
-        std::string const& value) const
-    {
-        auto jsonValue = root["values"][section][name];
-        jsonValue["value"] = value;
-        jsonValue["translate"] = true;
-    }
-
     Task _loopTask;
     std::unique_ptr<HardwareInterface> _upHardwareInterface;
 
@@ -100,6 +66,7 @@ private:
     uint8_t _mode = HUAWEI_MODE_AUTO_EXT;
 
     DataPointContainer _dataPoints;
+    std::shared_ptr<Stats> _stats = std::make_shared<Stats>();
 
     uint32_t _outputCurrentOnSinceMillis;         // Timestamp since when the PSU was idle at zero amps
     uint32_t _nextAutoModePeriodicIntMillis;      // When to set the next output voltage in automatic mode

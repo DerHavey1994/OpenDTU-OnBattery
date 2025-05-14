@@ -33,7 +33,7 @@ void WebApiGridChargerClass::onStatus(AsyncWebServerRequest* request)
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
     auto& root = response->getRoot();
-    GridCharger.getJsonData(root);
+    GridCharger.getStats()->getLiveViewData(root);
 
     response->setLength();
     request->send(response);

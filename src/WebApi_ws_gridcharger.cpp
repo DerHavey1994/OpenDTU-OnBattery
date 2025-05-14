@@ -101,7 +101,7 @@ void WebApiWsGridChargerLiveClass::sendDataTaskCb()
 
 void WebApiWsGridChargerLiveClass::generateCommonJsonResponse(JsonVariant& root)
 {
-    GridCharger.getJsonData(root);
+    GridCharger.getStats()->getLiveViewData(root);
 }
 
 void WebApiWsGridChargerLiveClass::onWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len)
