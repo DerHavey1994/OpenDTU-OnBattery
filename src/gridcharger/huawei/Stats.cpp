@@ -83,6 +83,7 @@ void Stats::mqttPublish() const
     }
 
     MqttSettings.publish("huawei/data_age", String((millis() - _dataPoints.getLastUpdate()) / 1000));
+    //TODO(andreasboehm): how to get the mode?
     // MqttSettings.publish("huawei/mode", String(GridCharger.getMode()));
 }
 

@@ -10,6 +10,12 @@
 #include <gridcharger/huawei/HardwareInterface.h>
 #include <gridcharger/huawei/DataPoints.h>
 #include <gridcharger/huawei/Stats.h>
+#include <espMqttClient.h>
+#include <frozen/map.h>
+#include <frozen/string.h>
+#include <deque>
+#include <functional>
+#include <mutex>
 
 namespace GridChargers::Huawei {
 
@@ -26,10 +32,9 @@ public:
     void loop() final;
     std::shared_ptr<::GridChargers::Stats> getStats() const final { return _stats; }
 
-    void setFan(bool online, bool fullSpeed);
-    void setProduction(bool enable);
-    void setParameter(float val, HardwareInterface::Setting setting);
-    void setMode(uint8_t mode);
+
+    void setProduction(bool enable) final;
+    void setParameter(float val, HardwareInterface::Setting setting) final;
 
     bool getAutoPowerStatus() const { return _autoPowerEnabled; };
     uint8_t getMode() const { return _mode; };
@@ -50,6 +55,9 @@ public:
 private:
     void _setParameter(float val, HardwareInterface::Setting setting, bool pollFeedback = false);
     void _setProduction(bool enable);
+
+    void setFan(bool online, bool fullSpeed);
+    void setMode(uint8_t mode);
 
     // these control the pin named "power", which in turn is supposed to control
     // a relay (or similar) to enable or disable the PSU using it's slot detect
@@ -76,6 +84,43 @@ private:
     uint8_t _autoPowerEnabledCounter = 0;
     bool _autoPowerEnabled = false;
     bool _batteryEmergencyCharging = false;
+
+    enum class Topic : unsigned {
+        LimitOnlineVoltage,
+        LimitOnlineCurrent,
+        LimitOfflineVoltage,
+        LimitOfflineCurrent,
+        LimitInputCurrent,
+        Mode,
+        Production,
+        FanOnlineFullSpeed,
+        FanOfflineFullSpeed
+    };
+
+    void subscribeTopics();
+    void unsubscribeTopics();
+
+    static constexpr frozen::string _cmdtopic = "huawei/cmd/";
+    static constexpr frozen::map<frozen::string, Topic, 9> _subscriptions = {
+        { "limit_online_voltage",   Topic::LimitOnlineVoltage },
+        { "limit_online_current",   Topic::LimitOnlineCurrent },
+        { "limit_offline_voltage",  Topic::LimitOfflineVoltage },
+        { "limit_offline_current",  Topic::LimitOfflineCurrent },
+        { "limit_input_current",    Topic::LimitInputCurrent },
+        { "mode",                   Topic::Mode },
+        { "production",             Topic::Production },
+        { "fan_online_full_speed",  Topic::FanOnlineFullSpeed },
+        { "fan_offline_full_speed", Topic::FanOfflineFullSpeed },
+    };
+
+    void onMqttMessage(Topic enumTopic,
+            const espMqttClientTypes::MessageProperties& properties,
+            const char* topic, const uint8_t* payload, size_t len);
+
+    // MQTT callbacks to process updates on subscribed topics are executed in
+    // the MQTT thread's context. we use this queue to switch processing the
+    // user requests into the main loop's context (TaskScheduler context).
+    std::deque<std::function<void()>> _mqttCallbacks;
 };
 
 

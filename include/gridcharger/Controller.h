@@ -19,12 +19,8 @@ public:
 
     bool getAutoPowerStatus() const;
 
-    void setFan(bool online, bool fullSpeed);
     void setParameter(float val, Huawei::HardwareInterface::Setting setting);
     void setProduction(bool enable);
-    void setMode(uint8_t mode);
-
-    uint8_t getMode() const;
 
 private:
     void loop();

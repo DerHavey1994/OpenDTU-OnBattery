@@ -75,33 +75,6 @@ void Controller::setProduction(bool enable)
     _upProvider->setProduction(enable);
 }
 
-void Controller::setFan(bool online, bool fullSpeed)
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (!_upProvider) { return; }
-
-    _upProvider->setFan(online, fullSpeed);
-}
-
-void Controller::setMode(uint8_t mode)
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (!_upProvider) { return; }
-
-    _upProvider->setMode(mode);
-}
-
-uint8_t Controller::getMode() const
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    if (!_upProvider) { return 0; }
-
-    return _upProvider->getMode();
-}
-
 bool Controller::getAutoPowerStatus() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
