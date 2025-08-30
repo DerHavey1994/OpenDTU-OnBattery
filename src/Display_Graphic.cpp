@@ -40,7 +40,7 @@ static const char* const i18n_yield_today_kwh[] = { "today: %.1f kWh", "Heute: %
 static const char* const i18n_yield_total_kwh[] = { "total: %.1f kWh", "Ges.: %.1f kWh", "total: %.1f kWh" };
 static const char* const i18n_yield_total_mwh[] = { "total: %.0f kWh", "Ges.: %.0f kWh", "total: %.0f kWh" };
 
-static const char* const i18n_battery_soc[] = { "SoC: %.1f%%", "Ladezustand: %.1f%%", "charge: %.1f%%" };
+static const char* const i18n_battery_soc[] = { "SoC: %.0f %%", "Batterie: %.0f %%", "charge: %.0f %%" };
 
 static const char* const i18n_date_format[] = { "%m/%d/%Y %H:%M", "%d.%m.%Y %H:%M", "%d/%m/%Y %H:%M" };
 
@@ -295,102 +295,32 @@ void DisplayGraphicClass::loop()
         }
     }
     //<=======================
-
-    if (showText) {
-        // Daily production
-        float wattsToday = Datastore.getTotalAcYieldDayEnabled();
-        if (wattsToday >= 10000) {
-            snprintf(_fmtText, sizeof(_fmtText), _i18n_yield_today_kwh.c_str(), wattsToday / 1000);
-        } else {
-            snprintf(_fmtText, sizeof(_fmtText), _i18n_yield_today_wh.c_str(), wattsToday);
-        }
-        printText(_fmtText, 1);
-
-        // Total production
-        const float wattsTotal = Datastore.getTotalAcYieldTotalEnabled();
-        auto const format = (wattsTotal >= 1000) ? _i18n_yield_total_mwh : _i18n_yield_total_kwh;
-        snprintf(_fmtText, sizeof(_fmtText), format.c_str(), wattsTotal);
-        printText(_fmtText, 2);
-
-        //=====> IP or Date-Time ========
-        // Change every 3 seconds
-        if (!(_mExtra % (3 * 2) < 3) && NetworkSettings.localIP()) {
-            printText(NetworkSettings.localIP().toString().c_str(), 3);
-        } else {
-            // Get current time
-            time_t now = time(nullptr);
-            strftime(_fmtText, sizeof(_fmtText), _i18n_date_format.c_str(), localtime(&now));
-            printText(_fmtText, 3);
-        }
-    }
-
     // the IP and time info in the third line use three-second slots. the
     // timing for the power meter and battery is chosen such that every third of those
     // three-second slots is used to NOT overwrite the total inverter energy.
-    bool timing = (_mExtra % 9) >= 3;
-    bool batteryAvailable = false;
+    //bool timing = (_mExtra % 9) >= 3;
     auto batteryStats = Battery.getStats();
-    if (batteryStats && batteryStats->isSoCValid()) {
-        batteryAvailable = true;
-    }
 
-    // Prioritize power meter and battery alternation when both are available
-    if (showText && Configuration.get().PowerMeter.Enabled && batteryAvailable && timing && !displayPowerSave) {
-        // Alternate between power meter and battery every 3 seconds within the timing window
-        bool showPowerMeter = ((_mExtra / 3) % 2) == 0;
-
-        setFont(2);
-        auto lineHeight = _display->getAscent() - _display->getDescent();
-        auto y = _lineOffsets[2] - _display->getAscent();
-        _display->setDrawColor(0);
-        _display->drawBox(0, y, _display->getDisplayWidth(), lineHeight);
-        _display->setDrawColor(1);
-
-        if (showPowerMeter) {
-            auto acPower = PowerMeter.getPowerTotal();
-            if (acPower > 999) {
-                snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_kw.c_str(), (acPower / 1000));
-            } else {
-                snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_w.c_str(), acPower);
-            }
-        } else {
-            float soc = batteryStats->getSoC();
-            snprintf(_fmtText, sizeof(_fmtText), _i18n_battery_soc.c_str(), soc);
-        }
-
-        printText(_fmtText, 2);
-    }
-    // Show power meter only if battery not available
-    else if (showText && Configuration.get().PowerMeter.Enabled && timing && !displayPowerSave) {
-        setFont(2);
-        auto lineHeight = _display->getAscent() - _display->getDescent();
-        auto y = _lineOffsets[2] - _display->getAscent();
-        _display->setDrawColor(0);
-        _display->drawBox(0, y, _display->getDisplayWidth(), lineHeight);
-        _display->setDrawColor(1);
-
+    if (showText) {
+        // Daily production
         auto acPower = PowerMeter.getPowerTotal();
         if (acPower > 999) {
             snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_kw.c_str(), (acPower / 1000));
         } else {
             snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_w.c_str(), acPower);
         }
+        printText(_fmtText, 1);
 
-        printText(_fmtText, 2);
-    }
-    // Show battery only if power meter not enabled
-    else if (showText && batteryAvailable && timing && !displayPowerSave) {
-        setFont(2);
-        auto lineHeight = _display->getAscent() - _display->getDescent();
-        auto y = _lineOffsets[2] - _display->getAscent();
-        _display->setDrawColor(0);
-        _display->drawBox(0, y, _display->getDisplayWidth(), lineHeight);
-        _display->setDrawColor(1);
-
+        // Total production
         float soc = batteryStats->getSoC();
         snprintf(_fmtText, sizeof(_fmtText), _i18n_battery_soc.c_str(), soc);
 
         printText(_fmtText, 2);
+
+        // Get current time
+        time_t now = time(nullptr);
+        strftime(_fmtText, sizeof(_fmtText), _i18n_date_format.c_str(), localtime(&now));
+        printText(_fmtText, 3);
     }
 
     _display->sendBuffer();
