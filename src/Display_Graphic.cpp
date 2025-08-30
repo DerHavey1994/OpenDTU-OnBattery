@@ -7,6 +7,7 @@
 #include "Datastore.h"
 #include "I18n.h"
 #include "PinMapping.h"
+#include <battery/Controller.h>
 #include <powermeter/Controller.h>
 #include <NetworkSettings.h>
 #include <map>
@@ -38,6 +39,8 @@ static const char* const i18n_yield_today_kwh[] = { "today: %.1f kWh", "Heute: %
 
 static const char* const i18n_yield_total_kwh[] = { "total: %.1f kWh", "Ges.: %.1f kWh", "total: %.1f kWh" };
 static const char* const i18n_yield_total_mwh[] = { "total: %.0f kWh", "Ges.: %.0f kWh", "total: %.0f kWh" };
+
+static const char* const i18n_battery_soc[] = { "SoC: %.1f%%", "Ladezustand: %.1f%%", "charge: %.1f%%" };
 
 static const char* const i18n_date_format[] = { "%m/%d/%Y %H:%M", "%d.%m.%Y %H:%M", "%d/%m/%Y %H:%M" };
 
@@ -203,6 +206,7 @@ void DisplayGraphicClass::setLocale(const String& locale)
     _i18n_yield_today_kwh = i18n_yield_today_kwh[idx];
     _i18n_yield_total_kwh = i18n_yield_total_kwh[idx];
     _i18n_yield_total_mwh = i18n_yield_total_mwh[idx];
+    _i18n_battery_soc = i18n_battery_soc[idx];
 
     I18n.readDisplayStrings(locale,
         _i18n_date_format,
@@ -214,7 +218,8 @@ void DisplayGraphicClass::setLocale(const String& locale)
         _i18n_yield_today_wh,
         _i18n_yield_today_kwh,
         _i18n_yield_total_kwh,
-        _i18n_yield_total_mwh);
+        _i18n_yield_total_mwh,
+        _i18n_battery_soc);
 }
 
 void DisplayGraphicClass::setDiagramMode(DiagramMode_t mode)
@@ -320,14 +325,43 @@ void DisplayGraphicClass::loop()
     }
 
     // the IP and time info in the third line use three-second slots. the
-    // timing for the power meter is chosen such that every third of those
+    // timing for the power meter and battery is chosen such that every third of those
     // three-second slots is used to NOT overwrite the total inverter energy.
     bool timing = (_mExtra % 9) >= 3;
+    bool batteryAvailable = false;
+    auto batteryStats = Battery.getStats();
+    if (batteryStats && batteryStats->isSoCValid()) {
+        batteryAvailable = true;
+    }
 
-    if (showText && Configuration.get().PowerMeter.Enabled && timing && !displayPowerSave) {
-        // erase the third line and print the power meter value instead.
-        // we do it this way to touch as least upstream code as possible
-        // to make maintenance easier.
+    // Prioritize power meter and battery alternation when both are available
+    if (showText && Configuration.get().PowerMeter.Enabled && batteryAvailable && timing && !displayPowerSave) {
+        // Alternate between power meter and battery every 3 seconds within the timing window
+        bool showPowerMeter = ((_mExtra / 3) % 2) == 0;
+
+        setFont(2);
+        auto lineHeight = _display->getAscent() - _display->getDescent();
+        auto y = _lineOffsets[2] - _display->getAscent();
+        _display->setDrawColor(0);
+        _display->drawBox(0, y, _display->getDisplayWidth(), lineHeight);
+        _display->setDrawColor(1);
+
+        if (showPowerMeter) {
+            auto acPower = PowerMeter.getPowerTotal();
+            if (acPower > 999) {
+                snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_kw.c_str(), (acPower / 1000));
+            } else {
+                snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_w.c_str(), acPower);
+            }
+        } else {
+            float soc = batteryStats->getSoC();
+            snprintf(_fmtText, sizeof(_fmtText), _i18n_battery_soc.c_str(), soc);
+        }
+
+        printText(_fmtText, 2);
+    }
+    // Show power meter only if battery not available
+    else if (showText && Configuration.get().PowerMeter.Enabled && timing && !displayPowerSave) {
         setFont(2);
         auto lineHeight = _display->getAscent() - _display->getDescent();
         auto y = _lineOffsets[2] - _display->getAscent();
@@ -341,6 +375,20 @@ void DisplayGraphicClass::loop()
         } else {
             snprintf(_fmtText, sizeof(_fmtText), _i18n_meter_power_w.c_str(), acPower);
         }
+
+        printText(_fmtText, 2);
+    }
+    // Show battery only if power meter not enabled
+    else if (showText && batteryAvailable && timing && !displayPowerSave) {
+        setFont(2);
+        auto lineHeight = _display->getAscent() - _display->getDescent();
+        auto y = _lineOffsets[2] - _display->getAscent();
+        _display->setDrawColor(0);
+        _display->drawBox(0, y, _display->getDisplayWidth(), lineHeight);
+        _display->setDrawColor(1);
+
+        float soc = batteryStats->getSoC();
+        snprintf(_fmtText, sizeof(_fmtText), _i18n_battery_soc.c_str(), soc);
 
         printText(_fmtText, 2);
     }
